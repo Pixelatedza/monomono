@@ -2,19 +2,18 @@
 const fs = require('fs').promises;
 const path = require('path');
 const shell = require('shelljs');
-const MonoConfig = require('./mono.json');
-const commands = require('./commands');
+const commands = require('../commands');
 
 class Mono{
 
-  constructor () {
+  constructor (config) {
 
     this.config = {
-      packageDir: MonoConfig.packageDir || 'packages',
-      componentDir: MonoConfig.components || 'components',
-      packages: MonoConfig.packages || {},
-      strictMode: !MonoConfig.strictMode ? MonoConfig.strictMode : true,
-      registry: MonoConfig.registry || null,
+      packageDir: config.packageDir || 'packages',
+      componentDir: config.components || 'components',
+      packages: config.packages || {},
+      strictMode: !config.strictMode ? config.strictMode : true,
+      registry: config.registry || null,
     };
 
     this.baseDir = process.cwd();
@@ -24,7 +23,7 @@ class Mono{
     this.resolvedPackages = [];
   }
 
-  static async run(command, args) {
+  static async run(command, args, config = {}) {
 
     let flags = [];
     let options = [];
@@ -41,7 +40,7 @@ class Mono{
 
     try {
 
-      let mono = new Mono();
+      let mono = new Mono(config);
       commands[command](mono, options, flags);
     } catch (e) {
       console.log(e);
@@ -204,13 +203,26 @@ class Mono{
 
     for (const pkg of Object.values(this.packages)) {
       shell.cd(pkg.directory);
-      shell.exec(command);
+      shell.exec(command);``
       shell.cd('..');
     }
   }
 }
 
-Mono.run(
-  process.argv[2] || 'help',
-  process.argv.slice(3)
-);
+fs
+  .readFile(path.join(process.cwd(), 'mono.json'))
+  .then(data => {
+
+    Mono.run(
+      process.argv[2] || 'help',
+      process.argv.slice(3),
+      JSON.parse(data.toString()),
+    );
+  })
+  .catch(e => {
+
+    Mono.run(
+      process.argv[2] || 'help',
+      process.argv.slice(3),
+    );
+  });

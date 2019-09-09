@@ -1,8 +1,7 @@
 {
   "name": "monomono",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "Mono repo manager for version bumping",
-  "main": "index.js",
   "scripts": {
     "start": "index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,7 +9,7 @@
   "author": "Justin Eloff",
   "license": "MIT",
   "bin": {
-    "mono": "index.js"
+    "mono": "bin/mono.js"
   },
   "dependencies": {
     "shelljs": "^0.8.3"
