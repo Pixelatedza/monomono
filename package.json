@@ -1,5 +1,5 @@
 {
-  "name": "monomono",
+  "name": "@pixel/mono",
   "version": "0.0.1",
   "description": "Mono repo manager for version bumping",
   "main": "index.js",
