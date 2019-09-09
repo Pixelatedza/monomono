@@ -1,0 +1,7 @@
+{
+  "packageDir": "packages",
+  "componentDir": "components",
+  "packages": {},
+  "strictMode": false,
+  "registry": "http://localhost:4873"
+}
