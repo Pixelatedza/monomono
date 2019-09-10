@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-const fs = require('fs').promises;
+const fs = require('fs');
+const util = require('util');
 const path = require('path');
 const shell = require('shelljs');
 const commands = require('../commands');
+
+// This is to support node 8 and up.
+const readFile = util.promisify(fs.readFile);
+const writeFile = util.promisify(fs.writeFile);
+const readdir = util.promisify(fs.readdir);
 
 class Mono{
 
@@ -49,7 +55,7 @@ class Mono{
 
   saveConfig() {
 
-    fs.writeFile(
+    writeFile(
       'mono.json',
       JSON.stringify(this.config, null, 2)
     );
@@ -59,7 +65,7 @@ class Mono{
 
     let pkgConfig = path.join(this.packageDir, pkg.directory, 'package.json');
 
-    fs.writeFile(
+    writeFile(
       pkgConfig,
       JSON.stringify(pkg.json, null, 2)
     );
@@ -88,8 +94,7 @@ class Mono{
 
     let pkgConfig = path.join(this.packageDir, pkg, 'package.json');
 
-    return fs
-      .readFile(pkgConfig)
+    return readFile(pkgConfig)
       .then(data => {
 
         let json = JSON.parse(data.toString());
@@ -134,14 +139,13 @@ class Mono{
 
   async getAllDirectoryPackages() {
 
-    let directories = await fs.readdir(this.packageDir);
+    let directories = await readdir(this.packageDir);
     return this.getAllPackages(directories);
   }
 
   checkUnmanaged() {
 
-    return fs
-      .readdir(this.packageDir)
+    return readdir(this.packageDir)
       .then(files => {
 
         let promises = [];
@@ -271,8 +275,7 @@ class Mono{
   }
 }
 
-fs
-  .readFile(path.join(process.cwd(), 'mono.json'))
+  readFile(path.join(process.cwd(), 'mono.json'))
   .then(data => {
 
     return Mono.run(

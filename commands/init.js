@@ -1,8 +1,8 @@
 module.exports = async (mono) => {
 
-  let packages = await mono.getAllPackagesFromDirs();
+  let packages = await mono.getAllDirectoryPackages();
 
-  for (const pkg of packages) {
+  for (const pkg of Object.values(packages)) {
 
     let name = pkg.json && pkg.json.name;
 
