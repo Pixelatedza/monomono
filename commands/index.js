@@ -3,4 +3,5 @@ module.exports = {
   sync: require('./sync'),
   publish: require('./publish'),
   remove: require('./remove'),
+  init: require('./init'),
 };

@@ -12,8 +12,8 @@ class Mono{
       packageDir: config.packageDir || 'packages',
       componentDir: config.components || 'components',
       packages: config.packages || {},
-      strictMode: !config.strictMode ? config.strictMode : true,
-      registry: config.registry || null,
+      strictMode: config.strictMode !== false,
+      registry: config.registry || undefined,
     };
 
     this.baseDir = process.cwd();
@@ -47,12 +47,7 @@ class Mono{
     }
   }
 
-  addPackage(pkg) {
-
-    this.config.packages[pkg.json.name] = {
-      version: pkg.version,
-      directory: pkg.directory,
-    };
+  saveConfig() {
 
     fs.writeFile(
       'mono.json',
@@ -60,16 +55,32 @@ class Mono{
     );
   }
 
+  savePackageConfig(pkg) {
+
+    let pkgConfig = path.join(this.packageDir, pkg.directory, 'package.json');
+
+    fs.writeFile(
+      pkgConfig,
+      JSON.stringify(pkg.json, null, 2)
+    );
+  }
+
+  addPackage(pkg) {
+
+    this.config.packages[pkg.json.name] = {
+      version: pkg.version,
+      directory: pkg.directory,
+    };
+
+    this.saveConfig();
+  }
+
   removePackage(pkg) {
 
     delete this.config.packages[pkg.json.name];
+    this.saveConfig();
 
-    fs.writeFile(
-      'mono.json',
-      JSON.stringify(this.config, null, 2)
-    );
-
-    // I would like to delete the directory, but this feels dangerous.
+    // I would like to delete the directory, but this method feels dangerous.
     // shell.rm('-rf', path.join(this.packageDir, pkg.directory));
   }
 
@@ -85,78 +96,103 @@ class Mono{
 
         return {
           json: json,
-          version: json.version,
+          version: this.packages[json.name] && this.packages[json.name].version || json.version,
           directory: pkg,
         }
       })
       .catch(e => {console.log(e)});
   }
 
-  getAllPackages() {
+  async getAllPackages(packageDirectories) {
 
-    return fs.readdir(this.packageDir)
+    let promises = [];
+    let packages = {};
+
+    for (const pkgDir of packageDirectories) {
+      
+      let promise = this.getPackageInfo(pkgDir);
+      promises.push(promise);
+      promise.then(pkg => {
+        packages[pkg.json.name] = pkg;
+      });
+    }
+
+    await Promise.all(promises);
+    return packages;
+  }
+
+  async getAllManagedPackages() {
+
+    let directories = [];
+
+    for (const pkg of Object.values(this.packages)) {
+      directories.push(pkg.directory);
+    }
+
+    return this.getAllPackages(directories);
+  }
+
+  async getAllDirectoryPackages() {
+
+    let directories = await fs.readdir(this.packageDir);
+
+    return this.getAllPackages(directories);
+  }
+
+  checkUnmanaged() {
+
+    return fs
+      .readdir(this.packageDir)
       .then(files => {
 
-        let pkg;
-        let packages = [];
+        let promises = [];
 
-        for (let i = 0; i < files.length; i++) {
+        for (const pkgDir of files) {
 
-          pkg = files[i];
+          promises.push(
+            this
+              .getPackageInfo(pkgDir)
+              .then(pkg => {
 
-          if (!pkg) {
-            continue;
-          }
+                let name = pkg.json && pkg.json.name;
 
-          packages.push(
-
-            fs
-              .readFile(path.join(
-                this.packageDir,
-                pkg,
-                'package.json'
-              ))
-              .then(data => {
-
-                let json = JSON.parse(data.toString());
-
-                if (!this.packages[json.name]) {
-
-                  if (this.config.strictMode) {
-                    throw new Error(`Found unmanaged package: ${json.name}`);
-                  }
-
-                  console.log(`Found unmanaged package: ${json.name}`);
-
-                  this.packages[json.name] = {
-                    currentVersion: json.version,
-                  };
+                if (!name) {
+                  console.log(`Found package with no name: ${pkg.directory}`);
                 }
-
-                this.packages[json.name].json = json;
-                return this.packages;
+          
+                if (!this.packages[name]) {
+                  
+                  if (this.config.strictMode) {
+                    throw new Error(`Found unmanaged package: ${name}`);
+                  }
+          
+                  console.log(`Found unmanaged package: ${name}`);
+                }
               })
           );
-
         }
 
-        return Promise.all(packages);
+        return Promise.all(promises);
       })
   }
 
-  resolveDependencies() {
+  resolveDependencies(packages) {
 
-    for (const pkg of Object.values(this.packages)) {
+    for (const pkg of Object.values(packages)) {
 
       this.resolvePackage(
         pkg.json,
+        packages,
         []
       );
     }
+
+    return this.resolvedPackages;
   }
 
   resolvePackage(
     pkg,
+    packages,
     seen
   ) {
 
@@ -165,6 +201,12 @@ class Mono{
     }
 
     if (this.resolvedPackages.includes(pkg.name)) {
+      return;
+    }
+
+    if (!pkg.dependencies){
+
+      this.resolvedPackages.push(pkg.name);
       return;
     }
 
@@ -184,12 +226,13 @@ class Mono{
 
       if (!this.packages[dep]) {
 
-        console.log(`package ${dep} does not exist in project`);
+        console.log(`package ${dep} does not exist in mono repo`);
         continue;
       }
 
       this.resolvePackage(
-        this.packages[dep].json,
+        packages[dep].json,
+        packages,
         seen
       );
     }
@@ -203,7 +246,7 @@ class Mono{
 
     for (const pkg of Object.values(this.packages)) {
       shell.cd(pkg.directory);
-      shell.exec(command);``
+      shell.exec(command);
       shell.cd('..');
     }
   }
@@ -221,8 +264,15 @@ fs
   })
   .catch(e => {
 
-    Mono.run(
-      process.argv[2] || 'help',
-      process.argv.slice(3),
-    );
+    if (process.argv[2] === 'init'){
+
+      Mono.run(
+        process.argv[2] || 'help',
+        process.argv.slice(3),
+      );
+
+      return;
+    }
+
+    console.log('No mono.json file found. Please run mono init or create the file yourself.');
   });

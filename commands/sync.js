@@ -1,23 +1,35 @@
+const semver = require('semver');
+
 module.exports = async (mono) => {
 
+  // TODO: Move this function to mono.
   const update = (pkg, currentVersion) => {
 
     if (!pkg) {
       return;
     }
-  
+
     let isUpdated;
-  
-    for (const [dep, depVersion] of Object.entries(pkg.dependencies)) {
 
-      if (!mono.packages[dep]) {
-        continue;
-      }
+    if (pkg.dependencies) {
 
-      if (depVersion < mono.packages[dep].json.version) {
+      for (const [dep, depVersion] of Object.entries(pkg.dependencies)) {
   
-        pkg.dependencies[dep] = mono.packages[dep].json.version;
-        isUpdated = true;
+        if (!mono.packages[dep]) {
+          continue;
+        }
+
+        let currentDepVersion = packages[dep] && packages[dep].json && packages[dep].json.version;
+
+        if (!currentDepVersion) {
+          continue;
+        }
+
+        if (semver.coerce(depVersion).version < currentDepVersion) {
+    
+          pkg.dependencies[dep] = `^${currentDepVersion}`;
+          isUpdated = true;
+        }
       }
     }
   
@@ -27,20 +39,33 @@ module.exports = async (mono) => {
       version[2] += 1;
       pkg.version = version.join('.');
     }
-  
-    mono.packages[pkg.name].currentVersion = pkg.version;
+
+    console.log(`${pkg.name}: ${currentVersion} => ${pkg.version}`);
+
+    mono.packages[pkg.name].version = pkg.version;
+    mono.savePackageConfig(packages[pkg.name]);
   };
 
-  await mono.getAllPackages();
-  await mono.resolveDependencies();
+  try {
+    await mono.checkUnmanaged();
+  } catch (e) {
+    
+    console.log(e.message);
+    return;
+  }
 
-  for (const pkgName of mono.resolvedPackages) {
+  let packages = await mono.getAllManagedPackages();
+  let resolved = await mono.resolveDependencies(packages);
 
-    let pkg = mono.packages[pkgName];
+  console.log('\n## Updating packages ##')
+  for (const pkgName of resolved) {
+
+    let pkg = packages[pkgName];
     let json = pkg.json;
-    let currentVersion = pkg.currentVersion;
+    let currentVersion = mono.packages[pkgName].version;
     update(json, currentVersion);
   }
 
+  mono.saveConfig();
   return;
 };
