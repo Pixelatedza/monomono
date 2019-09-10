@@ -4,4 +4,5 @@ module.exports = {
   publish: require('./publish'),
   remove: require('./remove'),
   init: require('./init'),
+  exec: require('./exec'),
 };

@@ -135,7 +135,6 @@ class Mono{
   async getAllDirectoryPackages() {
 
     let directories = await fs.readdir(this.packageDir);
-
     return this.getAllPackages(directories);
   }
 
@@ -159,13 +158,15 @@ class Mono{
                 if (!name) {
                   console.log(`Found package with no name: ${pkg.directory}`);
                 }
-          
+
                 if (!this.packages[name]) {
                   
                   if (this.config.strictMode) {
-                    throw new Error(`Found unmanaged package: ${name}`);
+                    console.log(`Found unmanaged package: ${name}`)
+                    process.exitCode = 1;
+                    throw Error;
                   }
-          
+
                   console.log(`Found unmanaged package: ${name}`);
                 }
               })
@@ -221,7 +222,8 @@ class Mono{
       if (seen.includes(dep)) {
 
         console.error(`circular reference detected: ${pkg.name} --> ${dep}`);
-        throw new Error('circular dependency');
+        process.exitCode = 1;
+        throw Error;
       }
 
       if (!this.packages[dep]) {
@@ -245,8 +247,23 @@ class Mono{
     shell.cd(this.packageDir);
 
     for (const pkg of Object.values(this.packages)) {
+
       shell.cd(pkg.directory);
-      shell.exec(command);
+
+      let shellResult = shell.exec(
+        command, {
+          silent: true,
+        }
+      );
+
+      if (shellResult.code !== 0) {
+
+        console.log(`\nFailed to execute command '${command}' in package '${pkg.directory}'.`)
+        console.log(shellResult.stdout);
+        process.exitCode = shellResult.code;
+        return;
+      };
+
       shell.cd('..');
     }
   }
@@ -256,7 +273,7 @@ fs
   .readFile(path.join(process.cwd(), 'mono.json'))
   .then(data => {
 
-    Mono.run(
+    return Mono.run(
       process.argv[2] || 'help',
       process.argv.slice(3),
       JSON.parse(data.toString()),
@@ -266,12 +283,10 @@ fs
 
     if (process.argv[2] === 'init'){
 
-      Mono.run(
+      return Mono.run(
         process.argv[2] || 'help',
         process.argv.slice(3),
       );
-
-      return;
     }
 
     console.log('No mono.json file found. Please run mono init or create the file yourself.');

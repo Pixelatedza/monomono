@@ -46,14 +46,7 @@ module.exports = async (mono) => {
     mono.savePackageConfig(packages[pkg.name]);
   };
 
-  try {
-    await mono.checkUnmanaged();
-  } catch (e) {
-    
-    console.log(e.message);
-    return;
-  }
-
+  await mono.checkUnmanaged();
   let packages = await mono.getAllManagedPackages();
   let resolved = await mono.resolveDependencies(packages);
 
