@@ -256,6 +256,7 @@ class Mono{
         }
       );
 
+      console.log(`\n## Running command in ${pkg.directory}`);
       if (shellResult.code !== 0) {
 
         console.log(`\nFailed to execute command '${command}' in package '${pkg.directory}'.`)
@@ -264,6 +265,7 @@ class Mono{
         return;
       };
 
+      process.stdout.write(shellResult.stdout);
       shell.cd('..');
     }
   }
