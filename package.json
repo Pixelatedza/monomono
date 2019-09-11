@@ -2,6 +2,10 @@
   "name": "monomono",
   "version": "0.0.7",
   "description": "Mono repo manager for version bumping",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pixelatedza/mono.git"
+  },
   "scripts": {
     "start": "index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
