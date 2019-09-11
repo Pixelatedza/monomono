@@ -4,7 +4,7 @@
   "description": "Mono repo manager for version bumping",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pixelatedza/mono.git"
+    "url": "https://github.com/Pixelatedza/monomono.git"
   },
   "scripts": {
     "start": "index.js",
