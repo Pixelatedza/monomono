@@ -33,6 +33,18 @@ This will sync all version numbers in managed packages. If package two realies o
 npm run mono sync
 ``` 
 
+### bootstrap
+Run bootstrap command in all pacakges. In the case of node pacakges, it will run ```npm install```.
+```
+npm run mono bootstrap
+```
+
+### clean
+Runs clean command in all packages. In the case of node pacakges, it will run ```rm -rf node_modules```.
+```
+npm run mono clean
+```
+
 ### add
 Tells mono to add a package to the managed packages list.
 ```
