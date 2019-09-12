@@ -55,8 +55,8 @@ class Mono{
 
   saveConfig() {
 
-    writeFile(
-      'mono.json',
+    return writeFile(
+      path.join(this.baseDir, 'mono.json'),
       JSON.stringify(this.config, null, 2)
     );
   }
@@ -65,7 +65,7 @@ class Mono{
 
     let pkgConfig = path.join(this.packageDir, pkg.directory, 'package.json');
 
-    writeFile(
+    return writeFile(
       pkgConfig,
       JSON.stringify(pkg.json, null, 2)
     );
@@ -246,30 +246,40 @@ class Mono{
     this.resolvedPackages.push(pkg.name);
   }
 
-  executeInPackages(command) {
+  executeInPackage(command, pkg) {
+
+    shell.cd(this.packageDir);
+    shell.cd(pkg.directory);
+
+    console.log(`\n## Running command in ${pkg.directory}`);
+    let shellResult = shell.exec(command);
+
+    if (shellResult.code !== 0) {
+      process.exitCode = shellResult.code;
+    };
+
+    return shellResult;
+  }
+
+  executeInPackages(command, packages) {
 
     shell.cd(this.packageDir);
 
-    for (const pkg of Object.values(this.packages)) {
+    packages = packages || this.packages;
+
+    for (const pkg of Object.values(packages)) {
 
       shell.cd(pkg.directory);
 
-      let shellResult = shell.exec(
-        command, {
-          silent: true,
-        }
-      );
-
       console.log(`\n## Running command in ${pkg.directory}`);
+      let shellResult = shell.exec(command);
+
       if (shellResult.code !== 0) {
 
-        console.log(`\nFailed to execute command '${command}' in package '${pkg.directory}'.`)
-        console.log(shellResult.stdout);
         process.exitCode = shellResult.code;
         return;
       };
 
-      process.stdout.write(shellResult.stdout);
       shell.cd('..');
     }
   }

@@ -14,7 +14,7 @@ module.exports = async (mono) => {
     if (pkg.dependencies) {
 
       for (const [dep, depVersion] of Object.entries(pkg.dependencies)) {
-  
+
         if (!mono.packages[dep]) {
           continue;
         }
@@ -26,7 +26,7 @@ module.exports = async (mono) => {
         }
 
         if (semver.coerce(depVersion).version < currentDepVersion) {
-    
+
           pkg.dependencies[dep] = `^${currentDepVersion}`;
           isUpdated = true;
         }
@@ -34,7 +34,7 @@ module.exports = async (mono) => {
     }
   
     if (isUpdated && currentVersion === pkg.version) {
-  
+
       let version = pkg.version.split('.').map(Number);
       version[2] += 1;
       pkg.version = version.join('.');
@@ -43,6 +43,7 @@ module.exports = async (mono) => {
     console.log(`${pkg.name}: ${currentVersion} => ${pkg.version}`);
 
     mono.packages[pkg.name].version = pkg.version;
+    mono.packages[pkg.name].updated = true;
     mono.savePackageConfig(packages[pkg.name]);
   };
 
