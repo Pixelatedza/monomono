@@ -40,10 +40,13 @@ module.exports = async (mono) => {
       pkg.version = version.join('.');
     }
 
+    if (currentVersion !== pkg.version) {
+      mono.packages[pkg.name].updated = true;
+    }
+
     console.log(`${pkg.name}: ${currentVersion} => ${pkg.version}`);
 
     mono.packages[pkg.name].version = pkg.version;
-    mono.packages[pkg.name].updated = true;
     mono.savePackageConfig(packages[pkg.name]);
   };
 

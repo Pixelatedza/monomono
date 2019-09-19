@@ -2,21 +2,24 @@ module.exports = async (mono) => {
 
   let registry = mono.config.registry && `--registry=${mono.config.registry}` || '';
 
-  for (const [key, val] of Object.entries(mono.packages)) {
+  let packages = await mono.getAllManagedPackages();
+  let resolved = await mono.resolveDependencies(packages);
+  let pkg;
 
-    if (!key || !val) {
+  for (const pkgName of resolved) {
+
+    pkg = mono.packages[pkgName];
+
+    if (!pkg.updated) {
       continue;
     }
 
-    if (val.updated) {
+    let result = mono.executeInPackage(`npm install ${registry} && npm publish ${registry}`, pkg);
 
-      let result = mono.executeInPackage(`npm publish ${registry}`, val);
+    if (result.code === 0) {
 
-      if (result.code === 0) {
-
-        delete mono.packages[key].updated;
-        await mono.saveConfig();
-      }
+      delete mono.packages[pkgName].updated;
+      await mono.saveConfig();
     }
   }
 };
