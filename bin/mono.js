@@ -57,7 +57,7 @@ class Mono{
 
     return writeFile(
       path.join(this.baseDir, 'mono.json'),
-      JSON.stringify(this.config, null, 2)
+      JSON.stringify(this.config, null, 2) + '\n'
     );
   }
 
@@ -67,7 +67,7 @@ class Mono{
 
     return writeFile(
       pkgConfig,
-      JSON.stringify(pkg.json, null, 2)
+      JSON.stringify(pkg.json, null, 2) + '\n'
     );
   }
 
