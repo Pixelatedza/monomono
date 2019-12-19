@@ -11,9 +11,9 @@ module.exports = async (mono) => {
 
     let isUpdated;
 
-    if (pkg.dependencies) {
+    if (pkg.dependencies || pkg.peerDependencies) {
 
-      for (const [dep, depVersion] of Object.entries(pkg.dependencies)) {
+      for (const [dep, depVersion] of Object.entries({...pkg.dependencies, ...pkg.peerDependencies})) {
 
         if (!mono.packages[dep]) {
           continue;
@@ -27,7 +27,14 @@ module.exports = async (mono) => {
 
         if (semver.coerce(depVersion).version < currentDepVersion) {
 
-          pkg.dependencies[dep] = `^${currentDepVersion}`;
+          if (pkg.dependencies && pkg.dependencies[dep]) {
+            pkg.dependencies[dep] = `^${currentDepVersion}`;
+          }
+
+          if (pkg.peerDependencies && pkg.peerDependencies[dep]) {
+            pkg.peerDependencies[dep] = `^${currentDepVersion}`;
+          }
+
           isUpdated = true;
         }
       }
