@@ -156,6 +156,10 @@ class Mono{
             this
               .getPackageInfo(pkgDir)
               .then(pkg => {
+                
+                if (!pkg) {
+                  return;
+                }
 
                 let name = pkg.json && pkg.json.name;
 
