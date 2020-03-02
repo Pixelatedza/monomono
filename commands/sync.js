@@ -35,6 +35,10 @@ module.exports = async (mono) => {
             pkg.peerDependencies[dep] = `^${currentDepVersion}`;
           }
 
+          if (pkg.devDependencies && pkg.devDependencies[dep]) {
+            pkg.devDependencies[dep] = `^${currentDepVersion}`;
+          }
+
           isUpdated = true;
         }
       }
