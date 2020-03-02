@@ -31,13 +31,13 @@ class Mono{
 
   static async run(command, args, config = {}) {
 
-    let flags = [];
+    let flags = {};
     let options = [];
 
     for (const val of args) {
 
       if (val[0] === '-' || val[0] === '--') {
-        flags.push(val);
+        flags[val] = true;
         continue;
       }
 
